@@ -1,0 +1,25 @@
+## 1) Password Reset (Self-Service)
+Keywords: password, reset, credentials, account, portal, sspr
+Summary: How users can reset their password using the self-service portal.
+
+Instructions:
+1. Open the company Self-Service Password Reset (SSPR) page.
+2. Enter your company email and complete identity verification.
+3. Choose a new password with at least 12 characters.
+4. Wait a few minutes and sign in again.
+
+Troubleshooting:
+- If verification methods are missing, contact IT.
+- If the account is locked, wait or contact IT.
+
+---
+
+## 2) VPN Setup (Windows & macOS)
+Keywords: vpn, remote access, client, connection, certificate
+Summary: How to install and connect to the corporate VPN.
+
+Instructions:
+1. Download the approved VPN client from the IT portal.
+2. Install and open the VPN client.
+3. Sign in with company credentials and approve MFA.
+4. Confirm internal access.
