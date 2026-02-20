@@ -1,4 +1,4 @@
-# AUMOVIO IT Support Q&A Application
+#  IT Support Q&A Application
 Intern Assignment AI-Powered Q&A (C# .NET)
 
 
@@ -64,7 +64,7 @@ This approach reflects how larger documents are typically handled in real-world 
 
 To determine the most relevant section of the knowledge base:
 
-- The user’s question is split into keywords.
+- The userâ€™s question is split into keywords.
 - Each chunk is scored based on how many keywords it contains.
 - The chunk with the highest score is selected and used as context.
 
@@ -77,7 +77,7 @@ This simple keyword-based approach satisfies the assignment requirement for basi
 ### Prompt Structure
 The prompt sent to the AI consists of two parts:
 - **System message:** Defines the AI as an IT support assistant.
-- **User message:** Contains the selected knowledge base chunk and the user’s question.
+- **User message:** Contains the selected knowledge base chunk and the userâ€™s question.
 
 ### Why This Structure Was Chosen
 - Clearly defines the role of the AI.
