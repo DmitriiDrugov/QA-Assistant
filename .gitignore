@@ -2,3 +2,10 @@ bin/
 obj/
 .env
 appsettings.json
+!QA.Backend/appsettings.json
+!QA.Backend/appsettings.Development.json
+AUMOVIOQ&Aapp.csproj
+knowledge_base.txt
+Program.cs
+Q-A-project.sln
+Readme.md
