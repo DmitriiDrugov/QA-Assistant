@@ -1,15 +1,12 @@
 services:
   - type: web
     name: qa-backend-demo
-    runtime: dotnet
+    runtime: docker
     plan: free
-    buildCommand: dotnet publish QA.Backend/QA.Backend.csproj -c Release -o out
-    startCommand: cd out && dotnet QA.Backend.dll
+    region: frankfurt
     healthCheckPath: /api/health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
-      - key: ASPNETCORE_URLS
-        value: http://0.0.0.0:$PORT
       - key: AI__APIKEY
         sync: false
