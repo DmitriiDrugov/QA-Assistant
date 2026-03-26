@@ -98,6 +98,23 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.EnsureCreated();
+
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+    var knowledgeBaseService = scope.ServiceProvider.GetRequiredService<KnowledgeBaseService>();
+
+    try
+    {
+        var knowledgeStatus = await knowledgeBaseService.ReloadAsync();
+        logger.LogInformation(
+            "Knowledge base warm-up completed. Loaded: {IsLoaded}, Chunks: {ChunkCount}, Path: {ResolvedFilePath}",
+            knowledgeStatus.IsLoaded,
+            knowledgeStatus.ChunkCount,
+            knowledgeStatus.ResolvedFilePath);
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "Knowledge base warm-up failed during startup. The application will continue and retry on demand.");
+    }
 }
 
 app.UseExceptionHandler(errorApp =>
