@@ -11,5 +11,6 @@ appsettings.json
 AUMOVIOQ&Aapp.csproj
 knowledge_base.txt
 Program.cs
+!QA.Backend/Program.cs
 Q-A-project.sln
 Readme.md
