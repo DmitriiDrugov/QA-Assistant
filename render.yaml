@@ -5,6 +5,7 @@ services:
     plan: free
     buildCommand: dotnet publish QA.Backend/QA.Backend.csproj -c Release -o out
     startCommand: cd out && dotnet QA.Backend.dll
+    healthCheckPath: /api/health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
