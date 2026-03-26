@@ -29,3 +29,6 @@ public sealed class AiProviderException : Exception
     {
     }
 }
+
+public sealed class ConversationNotFoundException(string conversationId)
+    : Exception($"Conversation '{conversationId}' was not found.");

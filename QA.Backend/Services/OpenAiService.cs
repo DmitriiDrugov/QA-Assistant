@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using QA.Backend.Options;
@@ -23,8 +24,12 @@ public sealed class OpenAiService(HttpClient httpClient, IOptions<AiOptions> aiO
             throw new AiProviderException("AI base URL is invalid. Check Ai:BaseUrl configuration.", new InvalidOperationException());
         }
 
-        var endpointPath = _aiOptions.ChatCompletionsPath.TrimStart('/');
-        var endpointUri = new Uri(baseUri, endpointPath);
+        var normalizedBaseUrl = baseUri.AbsoluteUri.TrimEnd('/');
+        var normalizedEndpointPath = _aiOptions.ChatCompletionsPath.Trim().TrimStart('/');
+        if (!Uri.TryCreate($"{normalizedBaseUrl}/{normalizedEndpointPath}", UriKind.Absolute, out var endpointUri))
+        {
+            throw new AiProviderException("AI chat completions URL is invalid. Check Ai:BaseUrl and Ai:ChatCompletionsPath configuration.", new InvalidOperationException());
+        }
 
         // STEP 6: Keep AI provider-specific request logic isolated in one service.
         var requestBody = new
@@ -63,11 +68,7 @@ public sealed class OpenAiService(HttpClient httpClient, IOptions<AiOptions> aiO
         try
         {
             using var document = JsonDocument.Parse(responseContent);
-            var answer = document.RootElement
-                .GetProperty("choices")[0]
-                .GetProperty("message")
-                .GetProperty("content")
-                .GetString();
+            var answer = ExtractAnswer(document.RootElement);
 
             if (string.IsNullOrWhiteSpace(answer))
             {
@@ -82,7 +83,82 @@ public sealed class OpenAiService(HttpClient httpClient, IOptions<AiOptions> aiO
         }
         catch (Exception ex)
         {
-            throw new AiProviderException("Failed to parse AI provider response.", ex);
+            throw new AiProviderException($"Failed to parse AI provider response. Response snippet: {BuildResponseSnippet(responseContent)}", ex);
         }
+    }
+
+    private static string? ExtractAnswer(JsonElement rootElement)
+    {
+        if (!rootElement.TryGetProperty("choices", out var choicesElement) ||
+            choicesElement.ValueKind != JsonValueKind.Array ||
+            choicesElement.GetArrayLength() == 0)
+        {
+            return null;
+        }
+
+        var firstChoice = choicesElement[0];
+
+        if (firstChoice.TryGetProperty("message", out var messageElement) &&
+            messageElement.ValueKind == JsonValueKind.Object &&
+            messageElement.TryGetProperty("content", out var contentElement))
+        {
+            return ExtractContent(contentElement);
+        }
+
+        if (firstChoice.TryGetProperty("text", out var textElement) && textElement.ValueKind == JsonValueKind.String)
+        {
+            return textElement.GetString();
+        }
+
+        return null;
+    }
+
+    private static string? ExtractContent(JsonElement contentElement)
+    {
+        if (contentElement.ValueKind == JsonValueKind.String)
+        {
+            return contentElement.GetString();
+        }
+
+        if (contentElement.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var builder = new StringBuilder();
+
+        foreach (var item in contentElement.EnumerateArray())
+        {
+            if (item.ValueKind == JsonValueKind.String)
+            {
+                builder.Append(item.GetString());
+                continue;
+            }
+
+            if (item.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            if (item.TryGetProperty("text", out var textElement) && textElement.ValueKind == JsonValueKind.String)
+            {
+                builder.Append(textElement.GetString());
+            }
+        }
+
+        var result = builder.ToString().Trim();
+        return string.IsNullOrWhiteSpace(result) ? null : result;
+    }
+
+    private static string BuildResponseSnippet(string responseContent)
+    {
+        if (string.IsNullOrWhiteSpace(responseContent))
+        {
+            return "<empty>";
+        }
+
+        const int maxLength = 500;
+        var normalized = responseContent.Replace('\r', ' ').Replace('\n', ' ');
+        return normalized.Length <= maxLength ? normalized : $"{normalized[..maxLength]}...";
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using System.Text.RegularExpressions;
 using QA.Backend.Models;
 using QA.Backend.Options;
 
@@ -89,7 +90,7 @@ public sealed class KnowledgeBaseService(
                 throw new KnowledgeBaseException("Knowledge base file is empty.");
             }
 
-            // STEP 4: Move console chunking logic into a backend service.
+            // Prefer logical sections first so retrieval keeps related facts together.
             var chunks = SplitIntoChunks(text, _options.ChunkSize);
             if (chunks.Count == 0)
             {
@@ -146,12 +147,94 @@ public sealed class KnowledgeBaseService(
 
     private static IReadOnlyList<string> SplitIntoChunks(string text, int chunkSize)
     {
+        var normalized = text.Replace("\r\n", "\n");
+        var sectionChunks = normalized
+            .Split("\n---\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(section => section.Trim())
+            .Where(section => !string.IsNullOrWhiteSpace(section))
+            .ToList();
+
+        if (sectionChunks.Count > 0)
+        {
+            return MergeOversizedSections(sectionChunks, chunkSize);
+        }
+
         var chunks = new List<string>();
 
+        for (var index = 0; index < normalized.Length; index += chunkSize)
+        {
+            var length = Math.Min(chunkSize, normalized.Length - index);
+            chunks.Add(normalized.Substring(index, length).Trim());
+        }
+
+        return chunks.Where(chunk => !string.IsNullOrWhiteSpace(chunk)).ToList();
+    }
+
+    private static IReadOnlyList<string> MergeOversizedSections(IReadOnlyList<string> sections, int chunkSize)
+    {
+        var chunks = new List<string>();
+
+        foreach (var section in sections)
+        {
+            if (section.Length <= chunkSize)
+            {
+                chunks.Add(section);
+                continue;
+            }
+
+            // Fallback for very large sections: split on paragraph boundaries first, then hard-cut.
+            var paragraphs = Regex.Split(section, @"\n\s*\n")
+                .Where(paragraph => !string.IsNullOrWhiteSpace(paragraph))
+                .ToList();
+
+            if (paragraphs.Count == 0)
+            {
+                chunks.AddRange(HardSplit(section, chunkSize));
+                continue;
+            }
+
+            var current = string.Empty;
+            foreach (var paragraph in paragraphs)
+            {
+                var candidate = string.IsNullOrWhiteSpace(current) ? paragraph.Trim() : $"{current}\n\n{paragraph.Trim()}";
+                if (candidate.Length <= chunkSize)
+                {
+                    current = candidate;
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(current))
+                {
+                    chunks.Add(current);
+                }
+
+                if (paragraph.Length <= chunkSize)
+                {
+                    current = paragraph.Trim();
+                }
+                else
+                {
+                    chunks.AddRange(HardSplit(paragraph.Trim(), chunkSize));
+                    current = string.Empty;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(current))
+            {
+                chunks.Add(current);
+            }
+        }
+
+        return chunks;
+    }
+
+    private static IReadOnlyList<string> HardSplit(string text, int chunkSize)
+    {
+        var chunks = new List<string>();
         for (var index = 0; index < text.Length; index += chunkSize)
         {
             var length = Math.Min(chunkSize, text.Length - index);
-            chunks.Add(text.Substring(index, length));
+            chunks.Add(text.Substring(index, length).Trim());
         }
 
         return chunks;

@@ -1,25 +1,190 @@
-## 1) Password Reset (Self-Service)
-Keywords: password, reset, credentials, account, portal, sspr
-Summary: How users can reset their password using the self-service portal.
+## 1) Company Overview
+Keywords: company, overview, business, services, customers, industry, profile, mock
+Summary: Basic profile of the fictional company used in the demo knowledge base.
 
-Instructions:
-1. Open the company Self-Service Password Reset (SSPR) page.
-2. Enter your company email and complete identity verification.
-3. Choose a new password with at least 12 characters.
-4. Wait a few minutes and sign in again.
+Company:
+- Name: Northbridge Cloud Systems
+- Type: Mid-sized B2B software company
+- Industry: SaaS, IT operations, internal workflow automation
+- Headquarters: Budapest, Hungary
+- Founded: 2018
+- Employees: Approximately 240
 
-Troubleshooting:
-- If verification methods are missing, contact IT.
-- If the account is locked, wait or contact IT.
+What the company does:
+- Builds internal operations software for logistics, retail, and finance teams.
+- Provides a cloud platform for ticketing, approvals, reporting, and employee self-service.
+- Sells annual subscriptions to small and medium businesses in Central Europe.
+
+Key departments:
+- Engineering
+- Customer Support
+- Sales
+- Finance
+- HR
+- IT Operations
 
 ---
 
-## 2) VPN Setup (Windows & macOS)
-Keywords: vpn, remote access, client, connection, certificate
-Summary: How to install and connect to the corporate VPN.
+## 2) Password Reset (Self-Service)
+Keywords: password, reset, credentials, account, portal, sspr, login
+Summary: How employees reset their Northbridge account password.
 
 Instructions:
-1. Download the approved VPN client from the IT portal.
-2. Install and open the VPN client.
-3. Sign in with company credentials and approve MFA.
-4. Confirm internal access.
+1. Open the Northbridge Self-Service Password Reset portal.
+2. Enter your company email address.
+3. Complete identity verification using MFA or backup email.
+4. Choose a new password with at least 12 characters, one number, and one special character.
+5. Wait up to 5 minutes for the new password to sync across company services.
+
+Troubleshooting:
+- If MFA is not configured, contact IT Operations.
+- If the account is locked after 5 failed attempts, wait 15 minutes or open an IT ticket.
+
+---
+
+## 3) VPN Setup (Windows & macOS)
+Keywords: vpn, remote access, client, connection, certificate, office, remote work
+Summary: How employees connect to internal company systems from outside the office.
+
+Instructions:
+1. Download the approved Northbridge Secure Access client from the IT portal.
+2. Install the client and sign in with your company email.
+3. Approve the MFA prompt.
+4. Select the "Corporate Network" profile.
+5. Verify access to the intranet and internal dashboards.
+
+Notes:
+- VPN is required for finance systems, staging environments, and admin dashboards.
+- Split tunneling is disabled on company-managed laptops.
+
+---
+
+## 4) New Employee Onboarding
+Keywords: onboarding, new hire, employee, laptop, access, first day, account
+Summary: Standard onboarding process for new employees.
+
+Process:
+1. HR creates the employee record in the People system.
+2. IT Operations provisions email, SSO, laptop, and baseline software.
+3. The hiring manager submits role-based access requests.
+4. The employee completes security training in the first 3 business days.
+5. Access to sensitive systems is granted only after manager approval.
+
+Default equipment:
+- Engineering: 16-inch laptop, external monitor, dock, security key
+- Support and Sales: 14-inch laptop, headset, dock
+- Finance and HR: 14-inch laptop, privacy screen, dock
+
+---
+
+## 5) Support Team Working Hours
+Keywords: support, hours, availability, sla, response time, helpdesk, ticket
+Summary: Support coverage and internal service expectations.
+
+Support hours:
+- Monday to Friday
+- 08:00 to 18:00 Central European Time
+- No standard weekend coverage
+
+Internal SLA targets:
+- Critical issue: first response within 30 minutes
+- High priority: first response within 2 hours
+- Normal priority: first response within 1 business day
+- Low priority: first response within 2 business days
+
+Escalation:
+- Production incidents go first to Support, then to the on-call engineering lead.
+
+---
+
+## 6) Expense Reimbursement Policy
+Keywords: expense, reimbursement, travel, receipt, finance, policy, approval
+Summary: How employees submit business expenses.
+
+Policy:
+- Expenses must be submitted within 30 calendar days.
+- Every expense requires a receipt or invoice.
+- Manager approval is required before Finance review.
+- Reimbursements are paid in the next monthly payroll cycle.
+
+Allowed examples:
+- Business travel
+- Customer meeting meals
+- Conference tickets
+- Pre-approved software purchases
+
+Not allowed without pre-approval:
+- Personal electronics
+- Home office furniture above the budget cap
+- First-class travel
+
+---
+
+## 7) Product Suite
+Keywords: product, platform, software, features, modules, customers
+Summary: Main products sold by Northbridge Cloud Systems.
+
+Products:
+- FlowDesk: workflow and approvals platform
+- CasePilot: internal ticketing and service desk platform
+- LedgerBridge: finance operations and approval automation
+
+Core platform capabilities:
+- Role-based access control
+- Audit logs
+- Approval chains
+- Dashboard reporting
+- API integrations
+- SSO and MFA support
+
+Primary customers:
+- Regional retailers
+- Logistics operators
+- Shared service centers
+
+---
+
+## 8) Security Rules
+Keywords: security, policy, mfa, phishing, device, compliance, access
+Summary: Core security requirements for all employees.
+
+Rules:
+- MFA is mandatory for all company accounts.
+- Company data must be stored only in approved systems.
+- Suspicious emails must be reported using the phishing-report button.
+- Personal USB devices are not allowed on managed laptops.
+- Screens must be locked when leaving a desk.
+
+Incident reporting:
+- Suspected security incidents must be reported to IT Operations within 15 minutes.
+
+---
+
+## 9) Office and Remote Work Policy
+Keywords: office, remote, hybrid, attendance, work from home, policy
+Summary: Hybrid work expectations at Northbridge.
+
+Policy:
+- Most teams work in a hybrid model.
+- Standard expectation is 2 office days per week.
+- Fully remote work is allowed only for approved roles.
+- Employees must be reachable during local business hours unless on leave.
+
+Office locations:
+- Budapest HQ
+- Debrecen support office
+
+---
+
+## 10) IT Contact Channels
+Keywords: it, contact, helpdesk, support, channel, email, slack, urgent
+Summary: How employees contact internal support teams.
+
+Channels:
+- General IT issues: helpdesk portal
+- Email support: it-support@northbridge.example
+- Security incidents: security@northbridge.example
+- Urgent production incidents: on-call phone listed in the intranet
+
+Priority guidance:
+- Use "Critical" only for production outages, security incidents, or blocked payroll/finance work.

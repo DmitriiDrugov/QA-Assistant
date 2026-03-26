@@ -10,12 +10,10 @@ public sealed class SearchService
             throw new SearchException("No knowledge base chunks are available for search.");
         }
 
-        var keywords = question
-            .ToLowerInvariant()
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var keywords = ExtractKeywords(question);
 
         var bestChunk = string.Empty;
-        var highestScore = 0;
+        var highestScore = int.MinValue;
 
         foreach (var chunk in chunks)
         {
@@ -24,10 +22,23 @@ public sealed class SearchService
 
             foreach (var keyword in keywords)
             {
+                if (keyword.Length >= 4 && lowerChunk.Contains(keyword, StringComparison.Ordinal))
+                {
+                    score += 3;
+                    continue;
+                }
+
                 if (lowerChunk.Contains(keyword, StringComparison.Ordinal))
                 {
-                    score++;
+                    score += 1;
                 }
+            }
+
+            // Favor chunks whose title or keyword line directly matches the question terms.
+            var header = chunk.Split('\n', 3)[0].ToLowerInvariant();
+            if (keywords.Any(keyword => header.Contains(keyword, StringComparison.Ordinal)))
+            {
+                score += 5;
             }
 
             if (score > highestScore)
@@ -37,11 +48,21 @@ public sealed class SearchService
             }
         }
 
-        if (string.IsNullOrWhiteSpace(bestChunk))
+        if (string.IsNullOrWhiteSpace(bestChunk) || highestScore <= 0)
         {
             throw new SearchException("No relevant knowledge base chunk was found for the question.");
         }
 
         return bestChunk;
+    }
+
+    private static IReadOnlyList<string> ExtractKeywords(string question)
+    {
+        return question
+            .ToLowerInvariant()
+            .Split([' ', '\t', '\r', '\n', ',', '.', ':', ';', '!', '?', '-', '(', ')', '"', '\''],
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct()
+            .ToList();
     }
 }

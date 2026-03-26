@@ -1,6 +1,10 @@
 bin/
 obj/
+out/
 .env
+*.db
+*.db-shm
+*.db-wal
 appsettings.json
 !QA.Backend/appsettings.json
 !QA.Backend/appsettings.Development.json
