@@ -3,7 +3,7 @@ Keywords: company, overview, business, services, customers, industry, profile, m
 Summary: Basic profile of the fictional company used in the demo knowledge base.
 
 Company:
-- Name: Northbridge Cloud Systems
+- Name: NextGen Devs
 - Type: Mid-sized B2B software company
 - Industry: SaaS, IT operations, internal workflow automation
 - Headquarters: Budapest, Hungary
