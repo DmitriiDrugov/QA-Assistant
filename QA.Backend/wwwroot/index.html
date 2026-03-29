@@ -367,18 +367,84 @@ let currentUser = null;
 let currentConvId = null;
 let isTyping = false;
 let authMode = 'login';
+let authSessionId = 0;
+let authRequestInFlight = false;
+const pendingRequests = new Set();
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
+function beginTrackedRequest(opts = {}) {
+  if (opts.signal) {
+    return {
+      signal: opts.signal,
+      requestSessionId: authSessionId,
+      requestToken: token,
+      cleanup() {}
+    };
+  }
+
+  const controller = new AbortController();
+  pendingRequests.add(controller);
+
+  return {
+    signal: controller.signal,
+    requestSessionId: authSessionId,
+    requestToken: token,
+    cleanup() {
+      pendingRequests.delete(controller);
+    }
+  };
+}
+
+function abortPendingRequests() {
+  pendingRequests.forEach(controller => controller.abort());
+  pendingRequests.clear();
+}
+
+function resetAuthSubmitButton() {
+  const submitBtn = document.getElementById('authSubmitBtn');
+  submitBtn.disabled = false;
+  submitBtn.textContent = authMode === 'login' ? 'Sign In →' : 'Register →';
+}
+
+function resetAppState() {
+  const area = document.getElementById('messagesArea');
+  const list = document.getElementById('historyList');
+  const input = document.getElementById('chatInput');
+
+  isTyping = false;
+  currentConvId = null;
+  document.getElementById('settingsPanel').classList.remove('open');
+  document.getElementById('userDisplayName').textContent = '—';
+  document.getElementById('userDisplayEmail').textContent = '—';
+  document.getElementById('welcomeTitle').textContent = 'Hello!';
+  document.getElementById('modelBadge').textContent = 'model';
+  list.innerHTML = '<div class="loading-history"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>';
+  area.innerHTML = '';
+  showWelcome(area);
+  input.value = '';
+  input.style.height = 'auto';
+  sendBtn.disabled = true;
+}
+
 async function apiFetch(path, opts = {}) {
+  const trackedRequest = beginTrackedRequest(opts);
   const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   let res;
   try {
-    res = await fetch(API_BASE + path, { ...opts, headers });
+    res = await fetch(API_BASE + path, { ...opts, headers, signal: trackedRequest.signal });
   } catch (error) {
+    trackedRequest.cleanup();
+    if (error.name === 'AbortError') return null;
     throw new Error('Network request failed. Make sure the backend is running and open the app through the backend URL.');
   }
-  if (res.status === 401) { logout(); return null; }
+  trackedRequest.cleanup();
+  if (res.status === 401) {
+    if (trackedRequest.requestSessionId === authSessionId && trackedRequest.requestToken && trackedRequest.requestToken === token) {
+      logout();
+    }
+    return null;
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(extractErrorMessage(err) || `HTTP ${res.status}`);
@@ -426,12 +492,19 @@ function switchTab(mode) {
 }
 
 async function submitAuth() {
+  if (authRequestInFlight) return;
+
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
   const errEl = document.getElementById('authError');
+  const submitBtn = document.getElementById('authSubmitBtn');
   errEl.textContent = '';
 
   if (!email || !password) { errEl.textContent = 'Please fill all fields'; return; }
+
+  authRequestInFlight = true;
+  submitBtn.disabled = true;
+  submitBtn.textContent = authMode === 'login' ? 'Signing In...' : 'Registering...';
 
   try {
     if (authMode === 'register') {
@@ -446,32 +519,46 @@ async function submitAuth() {
 
     // Login
     const form = new URLSearchParams({ username: email, password });
-    const res = await fetch(API_BASE + '/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: form
-    });
+    const trackedRequest = beginTrackedRequest();
+    let res;
+    try {
+      res = await fetch(API_BASE + '/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: form,
+        signal: trackedRequest.signal
+      });
+    } finally {
+      trackedRequest.cleanup();
+    }
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(extractErrorMessage(e) || 'Login failed'); }
     const data = await res.json();
     token = data.access_token;
     localStorage.setItem('aura_token', token);
-    await initApp();
+    const sessionId = ++authSessionId;
+    await initApp(sessionId);
   } catch (e) {
-    errEl.textContent = e.message;
+    if (e.name !== 'AbortError') {
+      errEl.textContent = e.message;
+    }
+  } finally {
+    authRequestInFlight = false;
+    resetAuthSubmitButton();
   }
 }
 
-async function initApp() {
+async function initApp(sessionId = authSessionId) {
   try {
     currentUser = await apiFetch('/auth/me');
-    if (!currentUser) return;
+    if (!currentUser || sessionId !== authSessionId) return;
     document.getElementById('userDisplayName').textContent = currentUser.username;
     document.getElementById('userDisplayEmail').textContent = currentUser.email;
     document.getElementById('welcomeTitle').textContent = `Hello, ${currentUser.username}!`;
     document.getElementById('authOverlay').style.display = 'none';
     document.getElementById('appContainer').style.display = 'grid';
-    await loadAISettings();
-    await loadConversations();
+    await loadAISettings(sessionId);
+    await loadConversations(sessionId);
+    if (sessionId !== authSessionId) return;
     document.getElementById('chatInput').focus();
   } catch(e) {
     console.error(e);
@@ -479,22 +566,27 @@ async function initApp() {
 }
 
 function logout() {
+  authSessionId += 1;
+  abortPendingRequests();
   token = null;
   localStorage.removeItem('aura_token');
   currentUser = null;
-  currentConvId = null;
+  switchTab('login');
+  resetAppState();
   document.getElementById('appContainer').style.display = 'none';
   document.getElementById('authOverlay').style.display = 'flex';
   document.getElementById('authPassword').value = '';
   document.getElementById('authError').textContent = '';
+  resetAuthSubmitButton();
 }
 
 // ── CONVERSATIONS ─────────────────────────────────────────────────────────────
-async function loadConversations() {
+async function loadConversations(sessionId = authSessionId) {
   const list = document.getElementById('historyList');
   list.innerHTML = '<div class="loading-history"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>';
   try {
     const convs = await apiFetch('/conversations');
+    if (sessionId !== authSessionId || !convs) return;
     renderConversations(convs);
   } catch(e) {
     list.innerHTML = '<div class="loading-history" style="color:var(--accent2)">Failed to load</div>';
@@ -660,9 +752,10 @@ async function sendMessage(text) {
 function sendSuggestion(text) { sendMessage(text); }
 
 // ── AI SETTINGS ───────────────────────────────────────────────────────────────
-async function loadAISettings() {
+async function loadAISettings(sessionId = authSessionId) {
   try {
     const s = await apiFetch('/settings/ai');
+    if (sessionId !== authSessionId || !s) return;
     document.getElementById('settingModel').value = s.model;
     document.getElementById('settingTemp').value = s.temperature;
     document.getElementById('settingTokens').value = s.max_tokens;
