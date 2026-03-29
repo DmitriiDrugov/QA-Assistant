@@ -30,7 +30,7 @@ Keywords: password, reset, credentials, account, portal, sspr, login
 Summary: How employees reset their Northbridge account password.
 
 Instructions:
-1. Open the Northbridge Self-Service Password Reset portal.
+1. Open the NextGen Devs Self-Service Password Reset portal.
 2. Enter your company email address.
 3. Complete identity verification using MFA or backup email.
 4. Choose a new password with at least 12 characters, one number, and one special character.
