@@ -9,6 +9,15 @@ namespace QA.Backend.Services;
 
 public sealed class OpenAiService(HttpClient httpClient, IOptions<AiOptions> aiOptions) : IAiService
 {
+    private const string PlainTextFormattingPolicy =
+        "Formatting rules (must follow strictly):\n" +
+        "- Reply in clean plain text. Do not use Markdown.\n" +
+        "- Do not use tables or pipe characters (|).\n" +
+        "- Do not use asterisks (*), underscores (_), backticks (`), or hash headers (#) for emphasis or structure.\n" +
+        "- Do not use bullet markers such as '-', '*', or '•'. If you need to list steps, write them as numbered sentences like '1. ...', '2. ...' on separate lines.\n" +
+        "- Do not add decorative separators, emojis, or ASCII art.\n" +
+        "- Write natural sentences and paragraphs only.";
+
     private readonly HttpClient _httpClient = httpClient;
     private readonly AiOptions _aiOptions = aiOptions.Value;
 
@@ -32,12 +41,13 @@ public sealed class OpenAiService(HttpClient httpClient, IOptions<AiOptions> aiO
         }
 
         // STEP 6: Keep AI provider-specific request logic isolated in one service.
+        var systemContent = $"{_aiOptions.SystemPrompt}\n\n{PlainTextFormattingPolicy}";
         var requestBody = new
         {
             model = _aiOptions.Model,
             messages = new[]
             {
-                new { role = "system", content = _aiOptions.SystemPrompt },
+                new { role = "system", content = systemContent },
                 new { role = "user", content = $"Context:\n{context}\n\nQuestion:\n{question}" }
             }
         };
