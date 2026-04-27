@@ -5,6 +5,17 @@ public sealed class SearchService
     // STEP 5: Keep the original keyword matching behavior from the console prototype.
     public string FindMostRelevantChunk(IReadOnlyList<string> chunks, string question)
     {
+        var match = TryFindMostRelevantChunk(chunks, question);
+        if (match is null)
+        {
+            throw new SearchException("No relevant knowledge base chunk was found for the question.");
+        }
+
+        return match;
+    }
+
+    public string? TryFindMostRelevantChunk(IReadOnlyList<string> chunks, string question)
+    {
         if (chunks.Count == 0)
         {
             throw new SearchException("No knowledge base chunks are available for search.");
@@ -50,7 +61,7 @@ public sealed class SearchService
 
         if (string.IsNullOrWhiteSpace(bestChunk) || highestScore <= 0)
         {
-            throw new SearchException("No relevant knowledge base chunk was found for the question.");
+            return null;
         }
 
         return bestChunk;
@@ -60,7 +71,7 @@ public sealed class SearchService
     {
         return question
             .ToLowerInvariant()
-            .Split([' ', '\t', '\r', '\n', ',', '.', ':', ';', '!', '?', '-', '(', ')', '"', '\''],
+            .Split(new[] { ' ', '\t', '\r', '\n', ',', '.', ':', ';', '!', '?', '-', '(', ')', '"', '\'' },
                 StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Distinct()
             .ToList();

@@ -21,7 +21,7 @@ public sealed class AuraModelService(
         string userMessage,
         IReadOnlyList<MessageEntity> history,
         AiModelSettingsEntity? settings,
-        string knowledgeContext,
+        string? knowledgeContext,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_aiOptions.ApiKey))
@@ -187,8 +187,18 @@ public sealed class AuraModelService(
         return configuredValue;
     }
 
-    private static string BuildGroundedSystemPrompt(string baseSystemPrompt, string knowledgeContext)
+    private static string BuildGroundedSystemPrompt(string baseSystemPrompt, string? knowledgeContext)
     {
+        if (string.IsNullOrWhiteSpace(knowledgeContext))
+        {
+            return
+                $"{baseSystemPrompt}\n\n" +
+                "No knowledge base entry matched the user's message. " +
+                "If the user is greeting you, making small talk, or asking what you can do, respond naturally and briefly, and invite them to ask a specific question. " +
+                "If the user is asking a factual question about the product or service, say that you do not have information about that in the knowledge base, and suggest they rephrase or ask about a related topic. " +
+                "Do not invent facts.";
+        }
+
         return
             $"{baseSystemPrompt}\n\n" +
             "You must answer using the provided knowledge base context as the primary source of truth. " +
