@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using QA.Backend.Data;
 using QA.Backend.Data.Entities;
 using QA.Backend.Models;
@@ -20,11 +21,15 @@ builder.Services.Configure<CorsOptions>(builder.Configuration.GetSection(CorsOpt
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 
 var databaseOptions = builder.Configuration.GetSection(DatabaseOptions.SectionName).Get<DatabaseOptions>() ?? new DatabaseOptions();
-var connectionString = string.IsNullOrWhiteSpace(databaseOptions.ConnectionString)
-    ? "Data Source=qa-backend.db"
-    : databaseOptions.ConnectionString;
+var connectionString = databaseOptions.ConnectionString;
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Database:ConnectionString is required. Set it via appsettings.json or environment variable Database__ConnectionString.");
+}
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
+var mySqlServerVersion = ServerVersion.Create(new Version(8, 0, 0), ServerType.MySql);
+builder.Services.AddDbContext<AppDbContext>(options => options.UseMySql(connectionString, mySqlServerVersion));
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -96,10 +101,20 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.EnsureCreated();
-
     var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    try
+    {
+        await dbContext.Database.MigrateAsync();
+        logger.LogInformation("Database migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogCritical(ex, "Database migration failed during startup. The application will not be able to serve requests that touch the database.");
+        throw;
+    }
+
     var knowledgeBaseService = scope.ServiceProvider.GetRequiredService<KnowledgeBaseService>();
 
     try
