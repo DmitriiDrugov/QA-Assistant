@@ -414,9 +414,12 @@ function resetAppState() {
   isTyping = false;
   currentConvId = null;
   document.getElementById('settingsPanel').classList.remove('open');
-  document.getElementById('userDisplayName').textContent = '—';
-  document.getElementById('userDisplayEmail').textContent = '—';
-  document.getElementById('welcomeTitle').textContent = 'Hello!';
+  const userNameEl = document.getElementById('userDisplayName');
+  if (userNameEl) userNameEl.textContent = '—';
+  const userEmailEl = document.getElementById('userDisplayEmail');
+  if (userEmailEl) userEmailEl.textContent = '—';
+  const welcomeTitleEl = document.getElementById('welcomeTitle');
+  if (welcomeTitleEl) welcomeTitleEl.textContent = 'Hello!';
   document.getElementById('modelBadge').textContent = 'model';
   list.innerHTML = '<div class="loading-history"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>';
   area.innerHTML = '';
@@ -551,9 +554,12 @@ async function initApp(sessionId = authSessionId) {
   try {
     currentUser = await apiFetch('/auth/me');
     if (!currentUser || sessionId !== authSessionId) return;
-    document.getElementById('userDisplayName').textContent = currentUser.username;
-    document.getElementById('userDisplayEmail').textContent = currentUser.email;
-    document.getElementById('welcomeTitle').textContent = `Hello, ${currentUser.username}!`;
+    const userNameEl = document.getElementById('userDisplayName');
+    if (userNameEl) userNameEl.textContent = currentUser.username;
+    const userEmailEl = document.getElementById('userDisplayEmail');
+    if (userEmailEl) userEmailEl.textContent = currentUser.email;
+    const welcomeTitleEl = document.getElementById('welcomeTitle');
+    if (welcomeTitleEl) welcomeTitleEl.textContent = `Hello, ${currentUser.username}!`;
     document.getElementById('authOverlay').style.display = 'none';
     document.getElementById('appContainer').style.display = 'grid';
     await loadAISettings(sessionId);
@@ -648,9 +654,9 @@ async function newChat() {
 // ── MESSAGES ──────────────────────────────────────────────────────────────────
 function showWelcome(area) {
   area.innerHTML = `
-    <div class="welcome">
+    <div class="welcome" id="welcomeScreen">
       <div class="welcome-orb">✦</div>
-      <h1>Hello, ${currentUser?.username || 'there'}!</h1>
+      <h1 id="welcomeTitle">Hello, ${currentUser?.username || 'there'}!</h1>
       <p>Your AI is connected and ready.<br/>Start a conversation below.</p>
       <div class="suggestions">
         <div class="suggestion-card" onclick="sendSuggestion('Hello! What can you help me with?')">
