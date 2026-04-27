@@ -47,7 +47,7 @@ public sealed class AuraChatService(
 
         var userMessageContent = content.Trim();
         var knowledgeChunks = await _knowledgeBaseService.GetChunksAsync(cancellationToken);
-        var matchedKnowledgeChunk = _searchService.FindMostRelevantChunk(knowledgeChunks, userMessageContent);
+        var matchedKnowledgeChunk = _searchService.TryFindMostRelevantChunk(knowledgeChunks, userMessageContent);
 
         var aiReply = await _auraModelService.GenerateReplyAsync(
             userMessageContent,
