@@ -141,7 +141,9 @@ body::after{ content:''; position:fixed; inset:0; background-image:linear-gradie
 .avatar{ width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:15px; }
 .avatar.ai{ background:var(--surface2); border:1px solid rgba(124,109,250,.3); box-shadow:0 0 15px rgba(124,109,250,.2); }
 .avatar.user{ background:var(--user-bubble); box-shadow:0 0 15px rgba(124,109,250,.3); }
-.bubble{ max-width:68%; padding:14px 18px; border-radius:18px; font-size:13px; line-height:1.75; }
+.bubble-wrap{ display:flex; flex-direction:column; max-width:min(720px,78%); min-width:0; }
+.message-row.user .bubble-wrap{ align-items:flex-end; }
+.bubble{ max-width:100%; padding:14px 18px; border-radius:18px; font-size:13px; line-height:1.75; overflow-wrap:anywhere; word-break:break-word; }
 .bubble.ai{ background:var(--ai-bubble); border:1px solid var(--border); border-top-left-radius:4px; color:var(--text); }
 .bubble.user{ background:var(--user-bubble); border-top-right-radius:4px; color:#fff; }
 .bubble-meta{ font-size:10px; color:var(--muted); margin-top:6px; letter-spacing:.05em; }
@@ -208,7 +210,7 @@ textarea::placeholder{ color:var(--muted); }
 ::-webkit-scrollbar{ width:4px; }
 ::-webkit-scrollbar-track{ background:transparent; }
 ::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.08); border-radius:4px; }
-@media(max-width:700px){ .app{ grid-template-columns:1fr; } .sidebar{ display:none; } .messages-area{ padding:20px 16px; } .input-area{ padding:12px 16px 20px; } .bubble{ max-width:85%; } }
+@media(max-width:700px){ .app{ grid-template-columns:1fr; } .sidebar{ display:none; } .messages-area{ padding:20px 16px; } .input-area{ padding:12px 16px 20px; } .bubble-wrap{ max-width:90%; } }
 </style>
 </head>
 <body>
@@ -683,7 +685,7 @@ function appendMessageDOM(area, role, text, dateStr) {
   row.className = `message-row ${role}`;
   row.innerHTML = `
     <div class="avatar ${role === 'ai' ? 'ai' : 'user'}">${role === 'ai' ? '✦' : '◉'}</div>
-    <div>
+    <div class="bubble-wrap">
       <div class="bubble ${role === 'ai' ? 'ai' : 'user'}">${escapeHtml(text)}</div>
       <div class="bubble-meta">${getTime(dateStr)}</div>
     </div>`;
