@@ -60,7 +60,7 @@ public sealed class SearchService
     {
         return question
             .ToLowerInvariant()
-            .Split([' ', '\t', '\r', '\n', ',', '.', ':', ';', '!', '?', '-', '(', ')', '"', '\''],
+            .Split(new[] { ' ', '\t', '\r', '\n', ',', '.', ':', ';', '!', '?', '-', '(', ')', '"', '\'' },
                 StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Distinct()
             .ToList();
