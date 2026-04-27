@@ -187,6 +187,15 @@ public sealed class AuraModelService(
         return configuredValue;
     }
 
+    private const string PlainTextFormattingPolicy =
+        "Formatting rules (must follow strictly):\n" +
+        "- Reply in clean plain text. Do not use Markdown.\n" +
+        "- Do not use tables or pipe characters (|).\n" +
+        "- Do not use asterisks (*), underscores (_), backticks (`), or hash headers (#) for emphasis or structure.\n" +
+        "- Do not use bullet markers such as '-', '*', or '•'. If you need to list steps, write them as numbered sentences like '1. ...', '2. ...' on separate lines.\n" +
+        "- Do not add decorative separators, emojis, or ASCII art.\n" +
+        "- Write natural sentences and paragraphs only.";
+
     private static string BuildGroundedSystemPrompt(string baseSystemPrompt, string? knowledgeContext)
     {
         if (string.IsNullOrWhiteSpace(knowledgeContext))
@@ -196,7 +205,8 @@ public sealed class AuraModelService(
                 "No knowledge base entry matched the user's message. " +
                 "If the user is greeting you, making small talk, or asking what you can do, respond naturally and briefly, and invite them to ask a specific question. " +
                 "If the user is asking a factual question about the product or service, say that you do not have information about that in the knowledge base, and suggest they rephrase or ask about a related topic. " +
-                "Do not invent facts.";
+                "Do not invent facts.\n\n" +
+                $"{PlainTextFormattingPolicy}";
         }
 
         return
@@ -204,6 +214,7 @@ public sealed class AuraModelService(
             "You must answer using the provided knowledge base context as the primary source of truth. " +
             "If the context does not contain enough information, say that the knowledge base does not contain the answer. " +
             "Do not invent facts outside the provided context.\n\n" +
+            $"{PlainTextFormattingPolicy}\n\n" +
             $"Knowledge base context:\n{knowledgeContext}";
     }
 }

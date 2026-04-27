@@ -16,9 +16,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             entity.ToTable("users");
             entity.HasKey(user => user.Id);
-            entity.Property(user => user.Email).IsRequired();
-            entity.Property(user => user.Username).IsRequired();
-            entity.Property(user => user.PasswordHash).IsRequired();
+            entity.Property(user => user.Id).HasMaxLength(36);
+            entity.Property(user => user.Email).HasMaxLength(255).IsRequired();
+            entity.Property(user => user.Username).HasMaxLength(255).IsRequired();
+            entity.Property(user => user.PasswordHash).HasMaxLength(512).IsRequired();
             entity.HasIndex(user => user.Email).IsUnique();
         });
 
@@ -26,8 +27,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             entity.ToTable("conversations");
             entity.HasKey(conversation => conversation.Id);
-            entity.Property(conversation => conversation.UserId).IsRequired();
-            entity.Property(conversation => conversation.Title).IsRequired();
+            entity.Property(conversation => conversation.Id).HasMaxLength(36);
+            entity.Property(conversation => conversation.UserId).HasMaxLength(36).IsRequired();
+            entity.Property(conversation => conversation.Title).HasMaxLength(500).IsRequired();
 
             entity.HasOne(conversation => conversation.User)
                 .WithMany(user => user.Conversations)
@@ -39,8 +41,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             entity.ToTable("messages");
             entity.HasKey(message => message.Id);
-            entity.Property(message => message.ConversationId).IsRequired();
-            entity.Property(message => message.Role).IsRequired();
+            entity.Property(message => message.Id).HasMaxLength(36);
+            entity.Property(message => message.ConversationId).HasMaxLength(36).IsRequired();
+            entity.Property(message => message.Role).HasMaxLength(32).IsRequired();
             entity.Property(message => message.Content).IsRequired();
 
             entity.HasOne(message => message.Conversation)
@@ -53,8 +56,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             entity.ToTable("ai_model_settings");
             entity.HasKey(settings => settings.Id);
-            entity.Property(settings => settings.UserId).IsRequired();
-            entity.Property(settings => settings.ModelEndpoint).IsRequired();
+            entity.Property(settings => settings.Id).HasMaxLength(36);
+            entity.Property(settings => settings.UserId).HasMaxLength(36).IsRequired();
+            entity.Property(settings => settings.ModelEndpoint).HasMaxLength(500).IsRequired();
             entity.Property(settings => settings.SystemPrompt).IsRequired();
             entity.HasIndex(settings => settings.UserId).IsUnique();
 
