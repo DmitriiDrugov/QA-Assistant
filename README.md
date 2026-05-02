@@ -1,207 +1,186 @@
 <div align="center">
 
-# 🤖 QA Assistant
+# QA Assistant
 
-**AI-powered корпоративный помощник для IT-поддержки**
+**A REST API backend that turns a plain-text knowledge base into an AI-powered Q&A service**
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
-[![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-REST_API-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://learn.microsoft.com/en-us/aspnet/core/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Render](https://img.shields.io/badge/Deploy-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://render.com/)
 
-<br/>
-
-> Умный ассистент для ответов на корпоративные вопросы: политики компании, IT-поддержка, онбординг сотрудников — всё в одном API.
-
-<br/>
-
-![Architecture](https://img.shields.io/badge/Architecture-REST_API-orange?style=flat-square)
-![Auth](https://img.shields.io/badge/Auth-JWT-green?style=flat-square)
-![AI](https://img.shields.io/badge/AI-OpenRouter-blueviolet?style=flat-square)
-![EF Core](https://img.shields.io/badge/ORM-EF_Core-blue?style=flat-square)
+A student project built by a team of 5 · ASP.NET Core · JWT Auth · OpenRouter LLM
 
 </div>
 
 ---
 
-## 📋 Содержание
+## What it does
 
-- [О проекте](#-о-проекте)
-- [Архитектура](#-архитектура)
-- [Технологии](#-технологии)
-- [Возможности](#-возможности)
-- [Быстрый старт](#-быстрый-старт)
-- [Конфигурация](#-конфигурация)
-- [API Reference](#-api-reference)
-- [Деплой](#-деплой)
-- [Команда](#-команда)
+You send a question. The API searches a knowledge base file for the most relevant chunk of text, passes it to an LLM, and returns a plain-text answer. No markdown, no fluff — just the answer.
 
----
-
-## 💡 О проекте
-
-**QA Assistant** — это REST API бэкенд, который превращает корпоративную базу знаний в умный чат-ассистент. Сотрудник задаёт вопрос на естественном языке, система находит релевантный раздел из базы знаний и формирует ответ с помощью LLM.
-
-**Это студенческий проект**, разработанный командой из 5 человек в рамках учебного курса. Проект прошёл путь от консольного прототипа до полноценного production-ready HTTP API.
-
-### Как это работает
+Originally a console prototype, now a deployable HTTP API with auth, conversation history, and per-user AI configuration.
 
 ```
-Вопрос пользователя
-        │
-        ▼
-┌───────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  Валидация    │────▶│  Поиск по базе   │────▶│   AI-генерация  │
-│  запроса      │     │  знаний (TF-IDF) │     │  ответа (LLM)   │
-└───────────────┘     └──────────────────┘     └─────────────────┘
-                                                        │
-                                                        ▼
-                                              Структурированный
-                                              текстовый ответ
+User question
+     │
+     ▼
+┌─────────────┐     ┌──────────────────┐     ┌───────────────┐
+│  Validation │────▶│  Keyword search  │────▶│  LLM response │
+│  (≤500 ch.) │     │  over KB chunks  │     │  via OpenRouter│
+└─────────────┘     └──────────────────┘     └───────────────┘
+                                                      │
+                                                      ▼
+                                             Plain-text answer
+                                           + matched source chunk
 ```
 
 ---
 
-## 🏗 Архитектура
+## Table of Contents
+
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Features](#features)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+- [API Reference](#api-reference)
+- [Deployment](#deployment)
+- [Team](#team)
+
+---
+
+## Tech Stack
+
+| | |
+|---|---|
+| **Language / Framework** | C# · .NET 8 · ASP.NET Core |
+| **Database** | MySQL 8.0 via Entity Framework Core 8 + Pomelo |
+| **Authentication** | JWT Bearer (HS256) |
+| **AI Provider** | OpenRouter API (configurable model, free tier works) |
+| **API Docs** | Swagger / Swashbuckle |
+| **Containerisation** | Docker (multi-stage, SDK → Runtime) |
+| **Hosting** | Render.com |
+| **CI** | GitHub Actions |
+
+---
+
+## Project Structure
 
 ```
 QA-Assistant/
 ├── QA.Backend/
-│   ├── Controllers/          # HTTP-контроллеры (6 шт.)
-│   │   ├── QuestionsController   # Основной Q&A endpoint
-│   │   ├── AuthController        # Регистрация / JWT-логин
-│   │   ├── ConversationsController  # История чатов
-│   │   ├── AiSettingsController  # Настройки AI-модели
-│   │   ├── KnowledgeController   # Управление базой знаний
-│   │   └── HealthController      # Health check
-│   ├── Services/             # Бизнес-логика (9 сервисов)
-│   │   ├── QaService             # Главный оркестратор
-│   │   ├── KnowledgeBaseService  # Загрузка и чанкинг KB
-│   │   ├── SearchService         # Поиск по ключевым словам
-│   │   ├── OpenAiService         # Интеграция с OpenRouter
-│   │   └── AuraModelService      # Кастомная AI-модель
-│   ├── Data/                 # EF Core + MySQL
-│   ├── Models/               # DTO запросов/ответов
-│   ├── Options/              # Типизированная конфигурация
-│   └── Migrations/           # Миграции базы данных
-├── knowledge_base.txt        # База знаний в формате Markdown
-├── Dockerfile                # Multi-stage Docker build
-└── render.yaml               # Конфигурация деплоя
+│   ├── Controllers/
+│   │   ├── QuestionsController.cs      # POST /api/questions/ask
+│   │   ├── AuthController.cs           # Register, login, /me
+│   │   ├── ConversationsController.cs  # Chat history
+│   │   ├── AiSettingsController.cs     # Per-user model config
+│   │   ├── KnowledgeController.cs      # KB status & reload
+│   │   └── HealthController.cs
+│   ├── Services/
+│   │   ├── QaService.cs                # Orchestrates the full Q&A flow
+│   │   ├── KnowledgeBaseService.cs     # Loads & chunks the KB file
+│   │   ├── SearchService.cs            # Keyword scoring over chunks
+│   │   ├── OpenAiService.cs            # OpenRouter HTTP client
+│   │   └── AuraModelService.cs         # Alternative model integration
+│   ├── Data/                           # EF Core context + entities
+│   ├── Models/                         # Request / response DTOs
+│   ├── Options/                        # Typed config classes
+│   ├── Migrations/
+│   └── Program.cs
+├── knowledge_base.txt                  # The knowledge base (plain text)
+├── Dockerfile
+└── render.yaml
 ```
 
 ---
 
-## 🛠 Технологии
+## Features
 
-| Категория | Стек |
-|-----------|------|
-| **Runtime** | .NET 8.0, C# |
-| **Framework** | ASP.NET Core (REST API) |
-| **База данных** | MySQL 8.0 + Entity Framework Core 8 |
-| **Аутентификация** | JWT Bearer (HS256) |
-| **AI-провайдер** | OpenRouter API (GPT, бесплатный тир) |
-| **Документация API** | Swagger / Swashbuckle |
-| **Контейнеризация** | Docker (multi-stage build) |
-| **Деплой** | Render.com (free tier) |
-| **CI/CD** | GitHub Actions |
+**Q&A pipeline**
+- Keyword-based relevance scoring over chunked knowledge base (chunk size configurable, default 800 chars)
+- Headers in KB get a scoring bonus — good for structured documents
+- LLM called via OpenRouter; system prompt enforces plain-text output
+- Returns the answer, the matched chunk, and the source label
 
----
+**Knowledge base management**
+- Loaded from a file at startup, kept in memory as a singleton
+- `POST /api/knowledge/reload` hot-reloads without restarting the server
+- Thread-safe via `SemaphoreSlim`
 
-## ✨ Возможности
+**Authentication**
+- Email + password registration, hashed with ASP.NET Core's `PasswordHasher`
+- JWT access tokens, 24-hour expiry by default
+- Standard `[Authorize]` on protected routes
 
-### 🔍 Умный Q&A
-- Ответы на вопросы на естественном языке
-- Keyword-based поиск по базе знаний с релевантным скорингом
-- Генерация ответов через LLM (OpenRouter / кастомная Aura-модель)
-- Ответы в чистом тексте — без лишней разметки
+**Conversation history**
+- Conversations and messages stored in MySQL
+- Full history retrievable per conversation ID
 
-### 📚 База знаний
-- Загрузка из текстового файла при старте
-- Разбивка на чанки (настраиваемый размер)
-- Горячая перезагрузка без рестарта сервиса (`/api/knowledge/reload`)
-- Мониторинг состояния (`/api/knowledge/status`)
-
-### 👤 Аутентификация
-- Регистрация по email + пароль (bcrypt-хеширование)
-- JWT-токены с настраиваемым TTL (по умолчанию 24 часа)
-- Защищённые endpoint'ы через `[Authorize]`
-
-### 💬 История разговоров
-- Создание и хранение диалогов в БД
-- Постраничная история сообщений
-- Привязка к конкретному пользователю
-
-### ⚙️ Персонализация AI
-- Индивидуальные настройки AI-модели на пользователя
-- Кастомный system prompt
-- Переключение между провайдерами (OpenRouter / Aura)
+**Per-user AI settings**
+- Each user can set a custom model endpoint and system prompt
+- Stored in `AiModelSettingsEntity`, 1:1 with users
 
 ---
 
-## 🚀 Быстрый старт
+## Getting Started
 
-### Требования
-
-- [.NET SDK 8.0+](https://dotnet.microsoft.com/download)
-- [MySQL 8.0](https://dev.mysql.com/downloads/)
-- API-ключ [OpenRouter](https://openrouter.ai/) (бесплатный тир доступен)
-
-### Локальный запуск
+**Requirements**
+- .NET SDK 8.0+
+- MySQL 8.0 (local or remote)
+- [OpenRouter](https://openrouter.ai/) API key (free tier is enough)
 
 ```bash
-# 1. Клонировать репозиторий
+# Clone
 git clone https://github.com/dmitriidrugov/qa-assistant.git
 cd qa-assistant
 
-# 2. Восстановить зависимости
+# Restore
 dotnet restore
 
-# 3. Задать переменные окружения
+# Set required env vars
 export ASPNETCORE_ENVIRONMENT=Development
-export AI__APIKEY="sk-or-xxxxxxxx"          # OpenRouter API key
-export DATABASE__CONNECTIONSTRING="Server=localhost;Database=qa_db;User=root;Password=yourpassword;"
+export AI__APIKEY="sk-or-xxxxxxxx"
+export DATABASE__CONNECTIONSTRING="Server=localhost;Database=qa_db;User=root;Password=secret;"
 
-# 4. Применить миграции базы данных
+# Apply migrations
 dotnet ef database update --project QA.Backend
 
-# 5. Запустить
+# Run
 dotnet run --project QA.Backend
 ```
 
-После запуска:
-- **API** → `https://localhost:7172`
-- **Swagger UI** → `https://localhost:7172/swagger`
-- **Health check** → `https://localhost:7172/api/health`
+Once running:
+- API base: `https://localhost:7172`
+- Swagger: `https://localhost:7172/swagger`
+- Health: `https://localhost:7172/api/health`
 
-### Docker
+**Docker**
 
 ```bash
-# Собрать образ
 docker build -t qa-assistant .
 
-# Запустить контейнер
 docker run -p 10000:10000 \
   -e AI__APIKEY="sk-or-xxxxxxxx" \
-  -e DATABASE__CONNECTIONSTRING="Server=host.docker.internal;..." \
+  -e DATABASE__CONNECTIONSTRING="Server=host.docker.internal;Database=qa_db;User=root;Password=secret;" \
   qa-assistant
 ```
 
 ---
 
-## ⚙️ Конфигурация
+## Configuration
 
-Настройки хранятся в `appsettings.json`. Секреты передаются через переменные окружения (переопределяют конфиг).
+Secrets are passed as environment variables — they override anything in `appsettings.json`.
 
-| Переменная окружения | Описание | Обязательно |
-|---------------------|----------|:-----------:|
-| `AI__APIKEY` | API-ключ OpenRouter | ✅ |
-| `DATABASE__CONNECTIONSTRING` | Строка подключения к MySQL | ✅ |
-| `ASPNETCORE_ENVIRONMENT` | `Development` / `Production` | — |
-| `JWT__KEY` | Секретный ключ подписи токенов | — |
+| Environment variable | Description | Required |
+|---|---|:---:|
+| `AI__APIKEY` | OpenRouter API key | ✅ |
+| `DATABASE__CONNECTIONSTRING` | MySQL connection string | ✅ |
+| `ASPNETCORE_ENVIRONMENT` | `Development` or `Production` | — |
+| `JWT__KEY` | JWT signing secret (change in production) | — |
 
 <details>
-<summary>Полный пример appsettings.json</summary>
+<summary>appsettings.json defaults</summary>
 
 ```json
 {
@@ -235,103 +214,71 @@ docker run -p 10000:10000 \
 
 ---
 
-## 📖 API Reference
+## API Reference
 
-### Основные endpoint'ы
-
-| Метод | Путь | Описание | Auth |
-|-------|------|----------|:----:|
-| `POST` | `/api/questions/ask` | Задать вопрос ассистенту | — |
-| `POST` | `/auth/register` | Регистрация нового пользователя | — |
-| `POST` | `/auth/login` | Получить JWT-токен | — |
-| `GET` | `/auth/me` | Информация о текущем пользователе | 🔒 |
-| `GET` | `/api/knowledge/status` | Статус базы знаний | — |
-| `POST` | `/api/knowledge/reload` | Перезагрузить базу знаний | — |
-| `GET` | `/api/conversations/{id}` | Получить историю диалога | 🔒 |
-| `POST` | `/api/conversations/{id}/messages` | Добавить сообщение | 🔒 |
-| `GET/PUT` | `/api/ai-settings` | Настройки AI-модели | 🔒 |
+| Method | Path | Description | Auth |
+|---|---|---|:---:|
+| `POST` | `/api/questions/ask` | Ask a question | — |
+| `POST` | `/auth/register` | Create an account | — |
+| `POST` | `/auth/login` | Get a JWT token | — |
+| `GET` | `/auth/me` | Current user info | 🔒 |
+| `GET` | `/api/knowledge/status` | KB load state & chunk count | — |
+| `POST` | `/api/knowledge/reload` | Reload KB from disk | — |
+| `GET` | `/api/conversations/{id}` | Fetch conversation history | 🔒 |
+| `POST` | `/api/conversations/{id}/messages` | Add a message | 🔒 |
+| `GET` / `PUT` | `/api/ai-settings` | User AI model config | 🔒 |
 | `GET` | `/api/health` | Health check | — |
 
-### Пример запроса
+**Example**
 
 ```bash
 curl -X POST https://your-app.onrender.com/api/questions/ask \
   -H "Content-Type: application/json" \
-  -d '{"question": "Как сбросить пароль от корпоративной почты?"}'
+  -d '{"question": "How do I reset my password?"}'
 ```
 
 ```json
 {
   "success": true,
-  "question": "Как сбросить пароль от корпоративной почты?",
-  "answer": "Для сброса пароля зайдите на портал HR по адресу hr.company.com, выберите раздел «Безопасность» и нажмите «Сбросить пароль». Вам придёт письмо со ссылкой.",
+  "question": "How do I reset my password?",
+  "answer": "Go to hr.company.com, open Security settings, and click Reset Password. A link will be sent to your registered email.",
   "matchedChunk": "...",
   "source": "knowledge_base"
 }
 ```
 
-> Полная документация доступна в Swagger UI по пути `/swagger` после запуска.
+Full interactive docs at `/swagger`.
 
 ---
 
-## 🌐 Деплой
+## Deployment
 
-Проект настроен для деплоя на [Render.com](https://render.com/) (free tier).
+Configured for [Render.com](https://render.com/) out of the box (`render.yaml`).
 
-```yaml
-# render.yaml
-services:
-  - type: web
-    runtime: docker
-    region: frankfurt
-    healthCheckPath: /api/health
-```
+1. Fork the repo
+2. Create a new Web Service on Render, point it at the repo
+3. Set `AI__APIKEY` and `DATABASE__CONNECTIONSTRING` in the Render environment
+4. Render builds the Docker image and deploys automatically
 
-**Шаги:**
-1. Форкнуть репозиторий
-2. Создать сервис на Render, указать репозиторий
-3. Добавить переменные окружения: `AI__APIKEY`, `DATABASE__CONNECTIONSTRING`
-4. Render автоматически соберёт Docker-образ и задеплоит
+Health check path: `/api/health` · Port: `10000`
 
 ---
 
-## 👥 Команда
+## Team
 
-Проект разработан студенческой командой из 5 человек:
+Built as a university group project by 5 people.
 
-<table>
-  <tr>
-    <td align="center">
-      <b>Участник 1</b><br/>
-      <sub>Backend, Архитектура</sub>
-    </td>
-    <td align="center">
-      <b>Участник 2</b><br/>
-      <sub>AI-интеграция, Сервисы</sub>
-    </td>
-    <td align="center">
-      <b>Участник 3</b><br/>
-      <sub>База данных, EF Core</sub>
-    </td>
-    <td align="center">
-      <b>Участник 4</b><br/>
-      <sub>Аутентификация, JWT</sub>
-    </td>
-    <td align="center">
-      <b>Участник 5</b><br/>
-      <sub>DevOps, Docker, CI/CD</sub>
-    </td>
-  </tr>
-</table>
-
----
-
-## 📄 Лицензия
-
-Этот проект создан в образовательных целях. MIT License.
+| Name | Role |
+|---|---|
+| **Oussama Azzouz** | Team Lead |
+| **Dmitrii Drugov** | Backend |
+| **Mustafa Celik** | AI Integration |
+| **Merinisa Mederova** | Database |
+| **Karam Ebnelwalid** | Database |
+| **Metry Peter Atef** | Frontend |
 
 ---
 
 <div align="center">
-  <sub>Сделано с ❤️ студенческой командой · 2026</sub>
+  <sub>University project · 2026</sub>
 </div>
