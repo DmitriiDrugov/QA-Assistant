@@ -10,20 +10,19 @@ on:
       - main
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     services:
-      postgres:
-        image: postgres:15
+      mysql:
+        image: mysql:8.0
         env:
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: qa_db
         ports:
-          - 5432:5432
+          - 3306:3306
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "mysqladmin ping -h localhost"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -31,23 +30,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
         with:
-          python-version: "3.11"
-          cache: pip
+          dotnet-version: "8.0.x"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Restore dependencies
+        run: dotnet restore
 
-      - name: Lint with flake8
-        run: flake8 . --max-line-length=100
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
 
-      - name: Run tests with coverage
+      - name: Run tests
         env:
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-        run: pytest --cov --cov-fail-under=60
+          DATABASE__CONNECTIONSTRING: "Server=localhost;Port=3306;Database=qa_db;User=root;Password=root;"
+          AI__APIKEY: "placeholder"
+        run: dotnet test --no-build --configuration Release --verbosity normal
