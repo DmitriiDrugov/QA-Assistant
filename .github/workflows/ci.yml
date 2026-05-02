@@ -36,13 +36,13 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore QA.Backend/QA.Backend.csproj
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build QA.Backend/QA.Backend.csproj --no-restore --configuration Release
 
       - name: Run tests
         env:
           DATABASE__CONNECTIONSTRING: "Server=localhost;Port=3306;Database=qa_db;User=root;Password=root;"
           AI__APIKEY: "placeholder"
-        run: dotnet test --no-build --configuration Release --verbosity normal
+        run: dotnet test QA.Backend/QA.Backend.csproj --no-build --configuration Release --verbosity normal
